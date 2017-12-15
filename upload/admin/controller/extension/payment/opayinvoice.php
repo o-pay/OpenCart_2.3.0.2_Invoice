@@ -203,7 +203,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
                 // 2.取出開立相關參數
                 
                 // *連線資訊
-                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.allpay.com.tw/Invoice/Issue';        // 一般開立網址
+                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.opay.tw/Invoice/Issue';        // 一般開立網址
                 $sOpayinvoice_Url_Issue    = $this->config->get('opayinvoice_url');            // 一般開立網址
                 $nOpayinvoice_Mid         = $this->config->get('opayinvoice_mid') ;            // 廠商代號
                 $sOpayinvoice_Hashkey     = $this->config->get('opayinvoice_hashkey');            // 金鑰
@@ -495,7 +495,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_hashiv' , `value` = 'q9jcZX8Ib9LM8wYk';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_autoissue' , `value` = '0';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_status' , `value` = '0';");
-        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.allpay.com.tw/Invoice/Issue';");
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.opay.tw/Invoice/Issue';");
     }
     
     public function uninstall() 

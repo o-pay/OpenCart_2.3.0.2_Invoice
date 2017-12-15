@@ -3,7 +3,7 @@
    <id>O'Pay Invoice</id>
    <version>1.0.0706</version>
    <vqmver>2.X</vqmver>
-   <author><a href="https://www.allpay.com.tw/">O'Pay</a></author>
+   <author><a href="https://www.opay.tw/">O'Pay</a></author>
    <file name="catalog/view/theme/*/template/checkout/payment_method.tpl">
        <operation info="invoice info input">
            <search position="top"><![CDATA[
