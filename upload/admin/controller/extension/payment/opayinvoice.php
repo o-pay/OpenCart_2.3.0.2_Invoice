@@ -203,7 +203,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
                 // 2.取出開立相關參數
                 
                 // *連線資訊
-                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.opay.tw/Invoice/Issue';        // 一般開立網址
+                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.allpay.com.tw/Invoice/Issue';        // 一般開立網址
                 $sOpayinvoice_Url_Issue    = $this->config->get('opayinvoice_url');            // 一般開立網址
                 $nOpayinvoice_Mid         = $this->config->get('opayinvoice_mid') ;            // 廠商代號
                 $sOpayinvoice_Hashkey     = $this->config->get('opayinvoice_hashkey');            // 金鑰
@@ -368,28 +368,64 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
                         {
                             $sMsg_P2 .= ( empty($sMsg_P2) ? '' : WEB_MESSAGE_NEW_LINE ) . '歐付寶電子發票開立，實際金額 $' . $nSub_Total . '， 無條件進位後 $' . $nSub_Total_Real;
                         }
-                        
-                        // $RelateNumber = 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
+
+
+                        // 加總除了商品以外的項目金額 v1.0.11115
+                        foreach( $aOrder_Total_Tmp as $key2 => $value2)
+                        {
+                            if($value2['code'] != 'sub_total' && $value2['code'] != 'total')
+                            {
+                                $nSub_Total_Real = $nSub_Total_Real + (int) $value2['value'];
+                                
+                                array_push($opay_invoice->Send['Items'], array('ItemName' => $value2['title'], 'ItemCount' => 1, 'ItemWord' => '批', 'ItemPrice' => (int) $value2['value'], 'ItemTaxType' => 1, 'ItemAmount' => (int) $value2['value'], 'ItemRemark' => $value2['title'] )) ;
+
+                            }
+                        }
+
+                        // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
+                        $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
+                        $order_card_no4 = $order_card_no4->rows ;
+                        $sInvoiceRemark = '' ;
+                        if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
+                        {
+                            $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+                        }
+
+
+// $sLog_Path     = '/var/tmp/opay_invoice.txt' ; // LOG路徑
+// $sLog = '傳入參數+++++++++++++++++++++++++++++++++++++++ ' . date('Y-m-d H:i:s') . ' ++++++++++++++++++++++++++++++++++++++++++++' . "\n";
+// $fp=fopen($sLog_Path, "a+");
+// fputs($fp, $sLog);
+// fclose($fp);
+
+// $test = print_r($aOrder_Total_Tmp, true) ;
+// $fp=fopen($sLog_Path, "a+");
+// fputs($fp, $test);
+// fclose($fp);
+
+
                         $RelateNumber    = $order_id ;
+                        // $RelateNumber = 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
+                        
                         
                         $opay_invoice->Send['RelateNumber']             = $RelateNumber ;
-                        $opay_invoice->Send['CustomerID']             = '' ;
-                        $opay_invoice->Send['CustomerIdentifier']         = $sCustomerIdentifier ;
+                        $opay_invoice->Send['CustomerID']               = '' ;
+                        $opay_invoice->Send['CustomerIdentifier']       = $sCustomerIdentifier ;
                         $opay_invoice->Send['CustomerName']             = $aOrder_Info_Tmp['firstname'] ;
                         $opay_invoice->Send['CustomerAddr']             = $aOrder_Info_Tmp['payment_country'] . $aOrder_Info_Tmp['payment_postcode'] . $aOrder_Info_Tmp['payment_city'] . $aOrder_Info_Tmp['payment_address_1'] . $aOrder_Info_Tmp['payment_address_2'];
-                        $opay_invoice->Send['CustomerPhone']             = $aOrder_Info_Tmp['telephone'] ;
-                        $opay_invoice->Send['CustomerEmail']             = $aOrder_Info_Tmp['email'] ;
-                        $opay_invoice->Send['ClearanceMark']             = '' ;
-                        $opay_invoice->Send['Print']                 = $nPrint ;
-                        $opay_invoice->Send['Donation']             = $nDonation ;
-                        $opay_invoice->Send['LoveCode']             = $sLove_Code ;
-                        $opay_invoice->Send['CarruerType']             = '' ;
-                        $opay_invoice->Send['CarruerNum']             = '' ;
-                        $opay_invoice->Send['TaxType']             = 1 ;
-                        $opay_invoice->Send['SalesAmount']             = $nSub_Total_Real ;    
-                        $opay_invoice->Send['InvType']             = '07' ;
-                        $opay_invoice->Send['vat']                 = '' ;
-                        $opay_invoice->Send['InvoiceRemark']             = 'OC2_OPayInvoice_1.0.0706' ;
+                        $opay_invoice->Send['CustomerPhone']            = $aOrder_Info_Tmp['telephone'] ;
+                        $opay_invoice->Send['CustomerEmail']            = $aOrder_Info_Tmp['email'] ;
+                        $opay_invoice->Send['ClearanceMark']            = '' ;
+                        $opay_invoice->Send['Print']                    = $nPrint ;
+                        $opay_invoice->Send['Donation']                 = $nDonation ;
+                        $opay_invoice->Send['LoveCode']                 = $sLove_Code ;
+                        $opay_invoice->Send['CarruerType']              = '' ;
+                        $opay_invoice->Send['CarruerNum']               = '' ;
+                        $opay_invoice->Send['TaxType']                  = 1 ;
+                        $opay_invoice->Send['SalesAmount']              = $nSub_Total_Real ;    
+                        $opay_invoice->Send['InvType']                  = '07' ;
+                        $opay_invoice->Send['vat']                      = '' ;
+                        $opay_invoice->Send['InvoiceRemark']            = $sInvoiceRemark ;
                         
                         // C.送出與返回
                         $aReturn_Info = $opay_invoice->Check_Out();
@@ -495,7 +531,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_hashiv' , `value` = 'q9jcZX8Ib9LM8wYk';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_autoissue' , `value` = '0';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_status' , `value` = '0';");
-        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.opay.tw/Invoice/Issue';");
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.allpay.com.tw/Invoice/Issue';");
     }
     
     public function uninstall() 

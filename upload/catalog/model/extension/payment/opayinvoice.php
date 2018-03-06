@@ -214,10 +214,30 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 					$sMsg_P2 .= ( empty($sMsg_P2) ? '' : WEB_MESSAGE_NEW_LINE ) . '歐付寶電子發票開立，實際金額 $' . $nSub_Total . '， 無條件進位後 $' . $nSub_Total_Real;
 				}
 				
+				// 加總除了商品以外的項目金額 v1.0.11115
+		                foreach( $aOrder_Total_Tmp as $key2 => $value2)
+		                {
+		                    if($value2['code'] != 'sub_total' && $value2['code'] != 'total')
+		                    {
+		                        $nSub_Total_Real = $nSub_Total_Real + (int) $value2['value'];
+		                        
+		                        array_push($opay_invoice->Send['Items'], array('ItemName' => $value2['title'], 'ItemCount' => 1, 'ItemWord' => '批', 'ItemPrice' => (int) $value2['value'], 'ItemTaxType' => 1, 'ItemAmount' => (int) $value2['value'], 'ItemRemark' => $value2['title'] )) ;
+
+		                    }
+		                }
+
+		                // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
+		                $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
+		                $order_card_no4 = $order_card_no4->rows ;
+		                $sInvoiceRemark = '' ;
+		                if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
+		                {
+		                    $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+		                }
 				
-				// $RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
 				$RelateNumber	= $order_id ;
-				
+				// $RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
+
 				$opay_invoice->Send['RelateNumber'] 			= $RelateNumber ;
 				$opay_invoice->Send['CustomerID'] 			= '' ;
 				$opay_invoice->Send['CustomerIdentifier'] 		= $sCustomerIdentifier ;
@@ -231,11 +251,11 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				$opay_invoice->Send['LoveCode'] 			= $sLove_Code ;
 				$opay_invoice->Send['CarruerType'] 			= '' ;
 				$opay_invoice->Send['CarruerNum'] 			= '' ;
-				$opay_invoice->Send['TaxType'] 			= 1 ;
+				$opay_invoice->Send['TaxType'] 				= 1 ;
 				$opay_invoice->Send['SalesAmount'] 			= $nSub_Total_Real ;	
-				$opay_invoice->Send['InvType'] 			= '07' ;
+				$opay_invoice->Send['InvType'] 				= '07' ;
 				$opay_invoice->Send['vat'] 				= '' ;
-				$opay_invoice->Send['InvoiceRemark'] 			= 'OC2_OPayInvoice_1.0.0706' ;
+				$opay_invoice->Send['InvoiceRemark'] 			= $sInvoiceRemark ;
 				
 				// C.送出與返回
 				$aReturn_Info = $opay_invoice->Check_Out();
