@@ -203,7 +203,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
                 // 2.取出開立相關參數
                 
                 // *連線資訊
-                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.allpay.com.tw/Invoice/Issue';        // 一般開立網址
+                //$sOpayinvoice_Url_Issue    = 'http://einvoice-stage.opay.tw/Invoice/Issue';        // 一般開立網址
                 $sOpayinvoice_Url_Issue    = $this->config->get('opayinvoice_url');            // 一般開立網址
                 $nOpayinvoice_Mid         = $this->config->get('opayinvoice_mid') ;            // 廠商代號
                 $sOpayinvoice_Hashkey     = $this->config->get('opayinvoice_hashkey');            // 金鑰
@@ -382,27 +382,21 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
                             }
                         }
 
-                        // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
-                        $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
-                        $order_card_no4 = $order_card_no4->rows ;
-                        $sInvoiceRemark = '' ;
-                        if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
-                        {
-                            $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+                        // check table exist
+                        $card_table_exist = $this->db->query("SHOW TABLES LIKE 'order_extend'");
+                        $card_table_exist_tmp = $card_table_exist->num_rows ;
+
+                        if($card_table_exist_tmp == 1)
+                        {   
+                             // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
+                            $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
+                            $order_card_no4 = $order_card_no4->rows ;
+                            $sInvoiceRemark = '' ;
+                            if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
+                            {
+                                $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+                            }
                         }
-
-
-// $sLog_Path     = '/var/tmp/opay_invoice.txt' ; // LOG路徑
-// $sLog = '傳入參數+++++++++++++++++++++++++++++++++++++++ ' . date('Y-m-d H:i:s') . ' ++++++++++++++++++++++++++++++++++++++++++++' . "\n";
-// $fp=fopen($sLog_Path, "a+");
-// fputs($fp, $sLog);
-// fclose($fp);
-
-// $test = print_r($aOrder_Total_Tmp, true) ;
-// $fp=fopen($sLog_Path, "a+");
-// fputs($fp, $test);
-// fclose($fp);
-
 
                         $RelateNumber    = $order_id ;
                         // $RelateNumber = 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
@@ -531,7 +525,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_hashiv' , `value` = 'q9jcZX8Ib9LM8wYk';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_autoissue' , `value` = '0';");
         $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_status' , `value` = '0';");
-        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.allpay.com.tw/Invoice/Issue';");
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `store_id` = 0 , `" . $sFieldName . "` = 'opayinvoice' , `key` = 'opayinvoice_url' , `value` = 'https://einvoice-stage.opay.tw/Invoice/Issue';");
     }
     
     public function uninstall() 

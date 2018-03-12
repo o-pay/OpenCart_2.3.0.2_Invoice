@@ -191,6 +191,20 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 					
 				 	$sProduct_Name 	= $value['name'] ;
 				 	$sProduct_Note 	= $value['model'] . '-' . $value['product_id'] ;
+
+					mb_internal_encoding('UTF-8');
+					$nString_Limit  = 37 ;
+					$nSource_Length = mb_strlen($sProduct_Note);
+
+					if ( $nString_Limit < $nSource_Length )
+					{
+					$nString_Limit = $nString_Limit - 3;
+
+					if ( $nString_Limit > 0 )
+					{
+					        $sProduct_Note = mb_substr($sProduct_Note, 0, $nString_Limit) . '...';
+					}
+					}
 				 	
 					array_push($opay_invoice->Send['Items'], array('ItemName' => $sProduct_Name, 'ItemCount' => $nQuantity, 'ItemWord' => '批', 'ItemPrice' => $nPrice, 'ItemTaxType' => 1, 'ItemAmount' => $nTotal, 'ItemRemark' => $sProduct_Note )) ;
 				}
@@ -226,14 +240,21 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 		                    }
 		                }
 
-		                // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
-		                $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
-		                $order_card_no4 = $order_card_no4->rows ;
-		                $sInvoiceRemark = '' ;
-		                if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
-		                {
-		                    $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
-		                }
+		    		// check table exist
+				$card_table_exist = $this->db->query("SHOW TABLES LIKE 'order_extend'");
+				$card_table_exist_tmp = $card_table_exist->num_rows ;
+
+				if($card_table_exist_tmp == 1)
+				{   
+				     // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
+				    $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
+				    $order_card_no4 = $order_card_no4->rows ;
+				    $sInvoiceRemark = '' ;
+				    if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
+				    {
+				        $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+				    }
+				}
 				
 				$RelateNumber	= $order_id ;
 				// $RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號

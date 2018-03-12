@@ -3,7 +3,7 @@
 $_['heading_title']		= 'O\'Pay 電子發票';
 
 // Text
-$_['text_opayinvoice'] 	= '<a href="https://www.allpay.com.tw/" target="_blank"><img src="view/image/payment/opayinvoice.png" /></a>';
+$_['text_opayinvoice'] 	= '<a href="https://www.opay.tw/" target="_blank"><img src="view/image/payment/opayinvoice.png" /></a>';
 $_['text_success']		= '成功：您已成功修改電子發票設定!';
 $_['text_edit']			= 'O\'Pay 電子發票';
 $_['text_extension']		= '擴充功能';
