@@ -131,19 +131,19 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 		{
 			
 			$sLove_Code 			= '' ;
-			$nDonation			= '2' ;
+			$nDonation			= '0' ;
 			$nPrint				= '0' ;
 			$sCustomerIdentifier		= '' ;
 			
 			if($aInvoice_Info['invoice_type'] == 1)
 			{
-				$nDonation 		= '2' ;					// 不捐贈
+				$nDonation 		= '0' ;					// 不捐贈
 				$nPrint			= '0' ;
 				$sCustomerIdentifier	= '' ;
 			}
 			elseif($aInvoice_Info['invoice_type'] == 2)
 			{
-				$nDonation 		= '2' ;					// 公司發票 不捐贈
+				$nDonation 		= '0' ;					// 公司發票 不捐贈
 				$nPrint			= '1' ;					// 公司發票 強制列印
 				$sCustomerIdentifier	= $aInvoice_Info['company_write'] ;	// 公司統一編號
 			}
@@ -156,7 +156,7 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 			}
 			else
 			{
-				$nDonation 		= '2' ;
+				$nDonation 		= '0' ;
 				$nPrint			= '0' ;
 				$sLove_Code 		= '' ;
 				$sCustomerIdentifier	= '' ;	
@@ -193,17 +193,15 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				 	$sProduct_Note 	= $value['model'] . '-' . $value['product_id'] ;
 
 					mb_internal_encoding('UTF-8');
-					$nString_Limit  = 37 ;
+					$nString_Limit  = 40 ;
 					$nSource_Length = mb_strlen($sProduct_Note);
 
 					if ( $nString_Limit < $nSource_Length )
 					{
-					$nString_Limit = $nString_Limit - 3;
-
-					if ( $nString_Limit > 0 )
-					{
-					        $sProduct_Note = mb_substr($sProduct_Note, 0, $nString_Limit) . '...';
-					}
+						if ( $nString_Limit > 0 )
+						{
+						        $sProduct_Note = mb_substr($sProduct_Note, 0, $nString_Limit) ;
+						}
 					}
 				 	
 					array_push($opay_invoice->Send['Items'], array('ItemName' => $sProduct_Name, 'ItemCount' => $nQuantity, 'ItemWord' => '批', 'ItemPrice' => $nPrice, 'ItemTaxType' => 1, 'ItemAmount' => $nTotal, 'ItemRemark' => $sProduct_Note )) ;
@@ -257,7 +255,7 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				}
 				
 				$RelateNumber	= $order_id ;
-				// $RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
+				//$RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
 
 				$opay_invoice->Send['RelateNumber'] 			= $RelateNumber ;
 				$opay_invoice->Send['CustomerID'] 			= '' ;
