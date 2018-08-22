@@ -1,7 +1,7 @@
 <?php
 
 
-class ControllerExtensionPaymentOpayInvoice extends Controller
+class ControllerExtensionPaymentOpayinvoice extends Controller
 {
 	protected function index()
 	{
@@ -10,7 +10,7 @@ class ControllerExtensionPaymentOpayInvoice extends Controller
 	// 寫入發票資訊
 	public function set_invoice_info()
 	{
-		if($this->request->post['invoice_type'] && $this->request->post['invoice_type'])
+		if($this->request->post['invoice_type'])
 		{
 		
 			$this->session->data["invoice_type"] 	= $this->request->post['invoice_type'];

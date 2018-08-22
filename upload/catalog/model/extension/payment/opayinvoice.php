@@ -1,6 +1,8 @@
 <?php
 class ModelExtensionPaymentOpayinvoice extends Model {
-	public function getMethod($address, $total)
+    private $stageMids = array('2000132'); // Stage merchant id
+
+    public function getMethod($address, $total)
 	{
 		$method_data = array();
 		return $method_data;
@@ -23,7 +25,7 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 	// 判斷電子發票SDK是否存在
 	public function check_invoice_sdk()
 	{
-		$sFile_Name =  dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR.'admin'.DIRECTORY_SEPARATOR.'controller'.DIRECTORY_SEPARATOR.'extension'.DIRECTORY_SEPARATOR.'payment'.DIRECTORY_SEPARATOR.'AllPay_Invoice.php' ;
+		$sFile_Name =  dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR.'admin'.DIRECTORY_SEPARATOR.'model'.DIRECTORY_SEPARATOR.'extension'.DIRECTORY_SEPARATOR.'payment'.DIRECTORY_SEPARATOR.'AllPay_Invoice.php' ;
 		return (file_exists($sFile_Name)) ? $sFile_Name : false ;	
 	}
 	
@@ -43,7 +45,7 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 		// *連線資訊
 		$sOpayinvoice_Url_Issue	= $this->config->get('opayinvoice_url');			// 一般開立網址
 		$nOpayinvoice_Mid 		= $this->config->get('opayinvoice_mid') ;			// 廠商代號
-		$sOpayinvoice_Hashkey 	= $this->config->get('opayinvoice_hashkey');			// 金鑰
+		$sOpayinvoice_Hashkey 		= $this->config->get('opayinvoice_hashkey');			// 金鑰
 		$sOpayinvoice_Hashiv 		= $this->config->get('opayinvoice_hashiv') ;			// 向量
 		
 		// *訂單資訊
@@ -61,36 +63,27 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 		
 		
 		// 3.判斷資料正確性
+        $aCheck_List = array(
+            'sOpayinvoice_Url_Issue',
+            'nOpayinvoice_Mid',
+            'sOpayinvoice_Hashkey',
+            'sOpayinvoice_Hashiv',
+        );
+        $aMsg_Piece = array(
+            'sOpayinvoice_Url_Issue' => '請填寫發票傳送網址',
+            'nOpayinvoice_Mid' => '請填寫商店代號(Merchant ID)',
+            'sOpayinvoice_Hashkey' => '請填寫金鑰(Hash Key)',
+            'sOpayinvoice_Hashiv' => '請填寫向量(Hash IV)',
+        );
 
-		// *URL判斷是否有值
-		if($sOpayinvoice_Url_Issue == '')
-		{
-			$bError = true ;
-			$sMsg .= ( empty($sMsg) ? '' : WEB_MESSAGE_NEW_LINE ) . '請填寫發票傳送網址。';
-		}
-		
-		// *MID判斷是否有值
-		if($nOpayinvoice_Mid == '')
-		{
-			$bError = true ;
-			$sMsg .= ( empty($sMsg) ? '' : WEB_MESSAGE_NEW_LINE ) . '請填寫商店代號(Merchant ID)。';
-		}
-		
-		// *HASHKEY判斷是否有值
-		if($sOpayinvoice_Hashkey == '')
-		{
-			$bError = true ;
-			$sMsg .= ( empty($sMsg) ? '' : WEB_MESSAGE_NEW_LINE ) . '請填寫金鑰(Hash Key)。';
-		}
-		
-		// *HASHIV判斷是否有值
-		if($sOpayinvoice_Hashiv == '')
-		{
-			$bError = true ;
-			$sMsg .= ( empty($sMsg) ? '' : WEB_MESSAGE_NEW_LINE ) . '請填寫向量(Hash IV)。';
-		}
-		
-		
+        foreach ($aCheck_List as $sTemp_Name) {
+            if (${$sTemp_Name} == '') {
+                $bError = true ;
+                $sMsg .= ( empty($sMsg) ? '' : WEB_MESSAGE_NEW_LINE ) . $aMsg_Piece[$sTemp_Name];
+            }
+        }
+        unset($aCheck_List, $aMsg_Piece);
+
 		// 判斷是否開過發票
 		if($aOrder_Info_Tmp['invoice_no'] != '0' )
 		{
@@ -134,26 +127,33 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 			$nDonation			= '0' ;
 			$nPrint				= '0' ;
 			$sCustomerIdentifier		= '' ;
-			
 			if($aInvoice_Info['invoice_type'] == 1)
 			{
+				// 個人發票
 				$nDonation 		= '0' ;					// 不捐贈
-				$nPrint			= '0' ;
+				$nPrint			= '1' ;					// 強制列印
 				$sCustomerIdentifier	= '' ;
 			}
 			elseif($aInvoice_Info['invoice_type'] == 2)
 			{
-				$nDonation 		= '0' ;					// 公司發票 不捐贈
-				$nPrint			= '1' ;					// 公司發票 強制列印
+				// 公司發票
+				$nDonation 		= '0' ;					// 不捐贈
+				$nPrint			= '1' ;					// 強制列印
 				$sCustomerIdentifier	= $aInvoice_Info['company_write'] ;	// 公司統一編號
 			}
 			elseif($aInvoice_Info['invoice_type'] == 3)
 			{
-				$nDonation 		= '1' ;
-				$nPrint			= '0' ;
-				$sLove_Code 		= $aInvoice_Info['love_code'] ;
+				$nDonation 		= '1' ;					// 捐贈
+				$nPrint			= '0' ;					// 不列印
+				$sLove_Code 		= $aInvoice_Info['love_code'] ;	// 愛心碼
 				$sCustomerIdentifier	= '' ;
 			}
+			elseif($aInvoice_Info['invoice_type'] == 4)
+            {
+                $nDonation 		= '0' ;					// 不捐贈
+                $nPrint			= '0' ;					// 不列印
+                $sCustomerIdentifier	= '' ;
+            }
 			else
 			{
 				$nDonation 		= '0' ;
@@ -170,9 +170,9 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				
 				// A.寫入基本介接參數
 				$opay_invoice->Invoice_Method 			= 'INVOICE' ;
-				$opay_invoice->Invoice_Url 				= $sOpayinvoice_Url_Issue ;
-				$opay_invoice->MerchantID 				= $nOpayinvoice_Mid ;
-				$opay_invoice->HashKey 				    = $sOpayinvoice_Hashkey ;
+				$opay_invoice->Invoice_Url 			= $sOpayinvoice_Url_Issue ;
+				$opay_invoice->MerchantID 			= $nOpayinvoice_Mid ;
+				$opay_invoice->HashKey 			= $sOpayinvoice_Hashkey ;
 				$opay_invoice->HashIV 				= $sOpayinvoice_Hashiv ;
 				
 				// B.送出開立發票參數
@@ -190,21 +190,32 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 					$nSub_Total_Real = $nSub_Total_Real + $nTotal ;				// 計算發票總金額
 					
 				 	$sProduct_Name 	= $value['name'] ;
-				 	$sProduct_Note 	= $value['model'] . '-' . $value['product_id'] ;
-
-					mb_internal_encoding('UTF-8');
-					$nString_Limit  = 40 ;
-					$nSource_Length = mb_strlen($sProduct_Note);
-
-					if ( $nString_Limit < $nSource_Length )
+				 	$sProduct_Note = $value['model'] . '-' . $value['product_id'] ;
+				 	
+				 	mb_internal_encoding('UTF-8');
+				 	$nString_Limit 	= 40 ;
+				 	$nSource_Length = mb_strlen($sProduct_Note);
+				 	
+				 	if ( $nString_Limit < $nSource_Length )
 					{
 						if ( $nString_Limit > 0 )
 						{
-						        $sProduct_Note = mb_substr($sProduct_Note, 0, $nString_Limit) ;
+							$sProduct_Note = mb_substr($sProduct_Note, 0, $nString_Limit) ;
 						}
 					}
 				 	
-					array_push($opay_invoice->Send['Items'], array('ItemName' => $sProduct_Name, 'ItemCount' => $nQuantity, 'ItemWord' => '批', 'ItemPrice' => $nPrice, 'ItemTaxType' => 1, 'ItemAmount' => $nTotal, 'ItemRemark' => $sProduct_Note )) ;
+					array_push(
+						$opay_invoice->Send['Items'],
+						array(
+							'ItemName' => $sProduct_Name,
+							'ItemCount' => $nQuantity,
+							'ItemWord' => '批',
+							'ItemPrice' => $nPrice,
+							'ItemTaxType' => 1,
+							'ItemAmount' => $nTotal,
+							'ItemRemark' => $sProduct_Note
+						)
+					) ;
 				}
 				
 				//
@@ -225,37 +236,39 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				{
 					$sMsg_P2 .= ( empty($sMsg_P2) ? '' : WEB_MESSAGE_NEW_LINE ) . '歐付寶電子發票開立，實際金額 $' . $nSub_Total . '， 無條件進位後 $' . $nSub_Total_Real;
 				}
-				
+
 				// 加總除了商品以外的項目金額 v1.0.11115
-		                foreach( $aOrder_Total_Tmp as $key2 => $value2)
-		                {
-		                    if($value2['code'] != 'sub_total' && $value2['code'] != 'total')
-		                    {
-		                        $nSub_Total_Real = $nSub_Total_Real + (int) $value2['value'];
-		                        
-		                        array_push($opay_invoice->Send['Items'], array('ItemName' => $value2['title'], 'ItemCount' => 1, 'ItemWord' => '批', 'ItemPrice' => (int) $value2['value'], 'ItemTaxType' => 1, 'ItemAmount' => (int) $value2['value'], 'ItemRemark' => $value2['title'] )) ;
+				foreach( $aOrder_Total_Tmp as $key2 => $value2)
+				{
+					if($value2['code'] != 'sub_total' && $value2['code'] != 'total')
+					{
+						$nSub_Total_Real = $nSub_Total_Real + (int) $value2['value'];
+						
+						array_push($opay_invoice->Send['Items'], array('ItemName' => $value2['title'], 'ItemCount' => 1, 'ItemWord' => '批', 'ItemPrice' => (int) $value2['value'], 'ItemTaxType' => 1, 'ItemAmount' => (int) $value2['value'], 'ItemRemark' => $value2['title'] )) ;
 
-		                    }
-		                }
+					}
+				}
 
-		    		// check table exist
+
+				$sInvoiceRemark = '' ;
+				
+				// check table exist
 				$card_table_exist = $this->db->query("SHOW TABLES LIKE 'order_extend'");
 				$card_table_exist_tmp = $card_table_exist->num_rows ;
 
 				if($card_table_exist_tmp == 1)
-				{   
-				     // 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
-				    $order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
-				    $order_card_no4 = $order_card_no4->rows ;
-				    $sInvoiceRemark = '' ;
-				    if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
-				    {
-				        $sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
-				    }
+				{	
+					// 判斷是否信用卡後四碼欄位有值，如果有值則寫入備註中 v1.0.11115
+					$order_card_no4 = $this->db->query("SELECT card_no4 FROM `order_extend` WHERE order_id = '" . $order_id . "' LIMIT 1 " );
+					$order_card_no4 = $order_card_no4->rows ;
+					
+					if(isset($order_card_no4[0]['card_no4']) && !empty($order_card_no4[0]['card_no4']))
+					{
+						$sInvoiceRemark .= $order_card_no4[0]['card_no4'] ;
+					}
 				}
-				
-				$RelateNumber	= $order_id ;
-				//$RelateNumber 	= 'OPAY'. date('YmdHis') . rand(1000000000,2147483647) ; // 產生測試用自訂訂單編號
+
+				$RelateNumber   = $this->getRelateNumber($order_id, $opay_invoice->MerchantID);
 
 				$opay_invoice->Send['RelateNumber'] 			= $RelateNumber ;
 				$opay_invoice->Send['CustomerID'] 			= '' ;
@@ -270,9 +283,9 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 				$opay_invoice->Send['LoveCode'] 			= $sLove_Code ;
 				$opay_invoice->Send['CarruerType'] 			= '' ;
 				$opay_invoice->Send['CarruerNum'] 			= '' ;
-				$opay_invoice->Send['TaxType'] 				= 1 ;
+				$opay_invoice->Send['TaxType'] 			= 1 ;
 				$opay_invoice->Send['SalesAmount'] 			= $nSub_Total_Real ;	
-				$opay_invoice->Send['InvType'] 				= '07' ;
+				$opay_invoice->Send['InvType'] 			= '07' ;
 				$opay_invoice->Send['vat'] 				= '' ;
 				$opay_invoice->Send['InvoiceRemark'] 			= $sInvoiceRemark ;
 				
@@ -332,6 +345,31 @@ class ModelExtensionPaymentOpayinvoice extends Model {
 		return $sMsg ;
 
 	}
-	
+
+    /**
+     * Get relate number
+     * @param int $order_id Order ID
+     * @param int $mid      Merchant ID
+     * @return string
+     */
+    private function getRelateNumber($order_id = 0, $mid = 0)
+    {
+        if ($this->isTestMode($mid) === true) {
+            return 'OPAY'. date('YmdHis') . rand(1000000000,2147483647);
+        } else {
+            return strval($order_id);
+        }
+    }
+
+    /**
+     * Check test mode by merchant id
+     * @param int $mid      Merchant ID
+     * @return boolean
+     */
+    private function isTestMode($mid = 0)
+    {
+        return in_array($mid, $this->stageMids);
+    }
+
 }
 ?>

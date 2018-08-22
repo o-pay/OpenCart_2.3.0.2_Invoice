@@ -1,44 +1,56 @@
-
-
 <?php
-$nInvoice_Type		= $this->session->data['invoice_type'] ;
-$nOrder_Id 		= $this->session->data['order_id'] ;
-$sCompany_Write 	= $this->session->data['company_write'] ;
-$sLove_Code 		= $this->session->data['love_code'] ;
-$nInvoice_Status 	= $this->session->data['invoice_status'] ;
-
-if($nInvoice_Status == 1)
-{
-
+// 取得電子發票資訊
+$aSession_List = array(
+    'invoice_type',
+    'order_id',
+    'company_write',
+    'love_code',
+    'invoice_status',
+);
+foreach ($aSession_List as $sName) {
+    if (isset($this->session->data[$sName]) === true) {
+        ${$sName} = $this->session->data[$sName];
+    } else {
+        ${$sName} = '';
+    }
+}
+$nInvoice_Type		= $invoice_type;
+$nOrder_Id 			= $order_id;
+$sCompany_Write 	= $company_write;
+$sLove_Code 		= $love_code;
+$nInvoice_Status 	= $invoice_status;
 
 // 啟用電子發票
+if($nInvoice_Status == 1){
+	// 參數設定
+    echo '發票資訊：' ;
+    switch($nInvoice_Type) {
+        case 4:
+            echo '歐付寶載具' ;
 
-	echo '發票資訊：' ;
-	if($nInvoice_Type == 3)
-	{
-		echo '捐贈' ;
-		echo ' 愛心碼 ' . $sLove_Code ;
-		
-		$sCompany_Write = '' ;
-	}
-	elseif($nInvoice_Type == 2)
-	{
-		
-		echo '公司發票' ;
-		echo ' 統一編號 ' . $sCompany_Write ;
-		
-		$sLove_Code 	= '' ;
-	}
-	else
-	{
-		echo '個人發票' ;
-		
-		$sCompany_Write = '' ;
-		$sLove_Code 	= '' ;
-	}
+            $sLove_Code 	= '' ;
+            break;
+        case 2:
+            echo '公司發票' ;
+            echo ' 統一編號 ' . $sCompany_Write ;
 
+            $sLove_Code 	= '' ;
+            break;
+        case 3:
+            echo '捐贈' ;
+            echo ' 愛心碼 ' . $sLove_Code ;
 
-	
+            $sCompany_Write = '' ;
+            break;
+        case 1:
+        default:
+            echo '個人發票' ;
+
+            $sCompany_Write = '' ;
+            $sLove_Code 	= '' ;
+            break;
+    }
+
 	// A.刪除invoice_info 資料表過期資料
 	
 	$nNow_Time  = time() ;
@@ -71,15 +83,4 @@ if($nInvoice_Status == 1)
 	echo '<hr>';
 }
 
-/*o
-$fp = fopen("/var/tmp/invoice.log","a");
-fputs($fp,$this->session->data['company_write']."\n");
-fclose($fp);
-*/
-
 ?>
-
-
-
-
-
